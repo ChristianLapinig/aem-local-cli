@@ -1,10 +1,6 @@
-/*
-Copyright © 2026 Christian Lapinig <lapinig.a.christian@gmail.com>
-*/
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ChristianLapinig/aem-local-cli/cmd"
@@ -12,8 +8,8 @@ import (
 
 func main() {
 	rootCmd := cmd.NewRootCmd()
+	rootCmd.AddCommand(cmd.NewInitCmd())
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 }
