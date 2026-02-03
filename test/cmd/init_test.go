@@ -12,6 +12,17 @@ import (
 	"github.com/ChristianLapinig/aem-local-cli/models"
 )
 
+func teardown(t testing.TB) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Error getting home directory: %v", err)
+	}
+	markerPath := filepath.Join(home, ".aemlocal_path")
+	if err := os.RemoveAll(markerPath); err != nil {
+		t.Fatalf("Error cleaning up marker file: %v", err)
+	}
+}
+
 func TestInitCommand_With_Path_Flag(t *testing.T) {
 	tmp := t.TempDir()
 	rootCmd := cmd.NewRootCmd()
@@ -34,6 +45,8 @@ func TestInitCommand_With_Path_Flag(t *testing.T) {
 	if !utils.PathExists(filepath.Join(configPath, "config.json")) {
 		t.Errorf("FAILED: expected %s/config.json to exist", configPath)
 	}
+
+	teardown(t)
 }
 
 func TestInitCommand_With_EnvsPath_Flag(t *testing.T) {
@@ -64,6 +77,8 @@ func TestInitCommand_With_EnvsPath_Flag(t *testing.T) {
 	if config.EnvsPath != envsPath {
 		t.Errorf("FAILED: expected envsPath to be %s. Got %s", envsPath, config.EnvsPath)
 	}
+
+	teardown(t)
 }
 
 func TestInitCommand_With_Path_Flag_Non_Existent(t *testing.T) {
@@ -79,6 +94,8 @@ func TestInitCommand_With_Path_Flag_Non_Existent(t *testing.T) {
 	if !strings.Contains(err.Error(), "Path does not exist") {
 		t.Error("FAILED: Expected path non-existent error to be thrown")
 	}
+
+	teardown(t)
 }
 
 func TestInitCommand_With_EnvsPath_Flag_Non_Existent(t *testing.T) {
@@ -95,4 +112,6 @@ func TestInitCommand_With_EnvsPath_Flag_Non_Existent(t *testing.T) {
 	if !strings.Contains(err.Error(), "Environments path does not exist") {
 		t.Error("FAILED: Expected environments path non-existent error to be thrown")
 	}
+
+	teardown(t)
 }

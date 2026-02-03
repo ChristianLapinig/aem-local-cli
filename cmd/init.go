@@ -32,20 +32,18 @@ structure:
 }
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if path == "" {
-				path, err = os.UserHomeDir()
-			}
+			home, err := os.UserHomeDir()
 			if err != nil {
 				return err
+			}
+			if path == "" {
+				path = home
 			}
 
 			if !utils.PathExists(envsPath) && envsPath != "" {
 				return errors.New("Environments path does not exist: " + envsPath)
 			} else if envsPath == "" {
-				envsPath, err = os.UserHomeDir()
-			}
-			if err != nil {
-				return err
+				envsPath = home
 			}
 
 			if !utils.PathExists(path) {
@@ -55,6 +53,12 @@ structure:
 			configPath := filepath.Join(path, ".aemlocal")
 			if err := os.Mkdir(configPath, 0755); err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
+			}
+
+			// Make config path discoverable to other commands via marker file
+			markerPath := filepath.Join(home, ".aemlocal_path")
+			if err := os.WriteFile(markerPath, []byte(configPath), 0644); err != nil {
+				return err
 			}
 
 			tempFolderPath := filepath.Join(configPath, "temp")
