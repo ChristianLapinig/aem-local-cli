@@ -7,14 +7,17 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ChristianLapinig/aem-local-cli/constants"
 	"github.com/ChristianLapinig/aem-local-cli/internal/utils"
-	"github.com/ChristianLapinig/aem-local-cli/models"
+	"github.com/ChristianLapinig/aem-local-cli/models/config"
+	"github.com/ChristianLapinig/aem-local-cli/models/environment"
 	"github.com/spf13/cobra"
 )
 
-var path string
-var envsPath string
-var err error
+var (
+	path     string
+	envsPath string
+)
 
 func NewInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,10 +35,7 @@ structure:
 }
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return err
-			}
+			home := utils.GetHomePath()
 			if path == "" {
 				path = home
 			}
@@ -50,32 +50,32 @@ structure:
 				return errors.New("Path does not exist: " + path)
 			}
 
-			configPath := filepath.Join(path, ".aemlocal")
-			if err := os.Mkdir(configPath, 0755); err != nil {
+			configPath := filepath.Join(path, constants.AemLocalFolder)
+			if err := os.Mkdir(configPath, 0o755); err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
 			}
 
 			// Make config path discoverable to other commands via marker file
-			markerPath := filepath.Join(home, ".aemlocal_path")
-			if err := os.WriteFile(markerPath, []byte(configPath), 0644); err != nil {
+			markerPath := filepath.Join(home, constants.MarkerFile)
+			if err := os.WriteFile(markerPath, []byte(configPath), 0o644); err != nil {
 				return err
 			}
 
 			tempFolderPath := filepath.Join(configPath, "temp")
-			if err := os.Mkdir(tempFolderPath, 0755); err != nil {
+			if err := os.Mkdir(tempFolderPath, 0o755); err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
 			}
 
-			config := &models.Config{
+			config := &config.Config{
 				EnvsPath:     envsPath,
-				Environments: []models.Environment{},
+				Environments: []environment.Environment{},
 			}
 			jsonData, err := json.MarshalIndent(config, "", " ")
 			if err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
 			}
-			jsonPath := fmt.Sprintf("%s/config.json", configPath)
-			if err := os.WriteFile(jsonPath, jsonData, 0644); err != nil {
+			jsonPath := filepath.Join(configPath, constants.ConfigJSON)
+			if err := os.WriteFile(jsonPath, jsonData, 0o644); err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
 			}
 
