@@ -10,6 +10,7 @@ func main() {
 	rootCmd := cmd.NewRootCmd()
 	rootCmd.AddCommand(cmd.NewInitCmd())
 	rootCmd.AddCommand(cmd.NewCreateCommand())
+	rootCmd.AddCommand(cmd.NewListCommand())
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
