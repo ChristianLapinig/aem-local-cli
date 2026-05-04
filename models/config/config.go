@@ -10,9 +10,29 @@ import (
 	"github.com/ChristianLapinig/aem-local-cli/models/environment"
 )
 
+const (
+	configFileName = "config.json"
+)
+
 type Config struct {
-	EnvsPath     string                    `json:"envsPath"`
 	Environments []environment.Environment `json:"environments"`
+}
+
+func CreateConfigFile(path string) error {
+	config := Config{
+		Environments: []environment.Environment{},
+	}
+	data, err := json.MarshalIndent(config, "", " ")
+	if err != nil {
+		return err
+	}
+
+	configFile := filepath.Join(path, configFileName)
+	if err := os.WriteFile(configFile, data, 0644); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func GetTempFolderPath() (string, error) {

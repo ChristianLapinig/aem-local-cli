@@ -13,24 +13,6 @@ import (
 	"github.com/ChristianLapinig/aem-local-cli/test/helpers"
 )
 
-type data struct {
-	path string
-	file *os.File
-}
-
-// Setup test files
-func setupFile(t testing.TB, name, path string) *data {
-	dest := filepath.Join(path, name)
-	f, err := os.Create(dest)
-	if err != nil {
-		t.Fatalf("error creating file %s", dest)
-	}
-	return &data{
-		path: dest,
-		file: f,
-	}
-}
-
 func authorAndPublishExist(t testing.TB, path string) {
 	authorPath := filepath.Join(path, constants.Author)
 	publishPath := filepath.Join(path, constants.Publish)
@@ -48,25 +30,22 @@ func TestCreateCommand_Default_Options(t *testing.T) {
 		t.Fatalf("error executing root command: %v", err)
 	}
 
-	licenseProps := setupFile(t, constants.LicenseProperties, tmp)
-	quickstartJar := setupFile(t, "cq-quickstart.jar", tmp)
-	defer licenseProps.file.Close()
-	defer quickstartJar.file.Close()
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer licenseProps.File.Close()
+	defer quickstartJar.File.Close()
+
+	envDir := filepath.Join(tmp, "my-env")
 
 	createCmd := cmd.NewCreateCommand()
-	createCmd.SetArgs([]string{licenseProps.path, quickstartJar.path})
+	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", envDir})
 	if err := createCmd.Execute(); err != nil {
 		t.Fatalf("error executing command: %v", err)
 	}
 
+	authorAndPublishExist(t, envDir)
+
 	cfg, err := config.LoadConfig()
-	if err != nil {
-		t.Fatalf("error loading config file: %v", err)
-	}
-
-	authorAndPublishExist(t, filepath.Join(cfg.EnvsPath, "aem"))
-
-	cfg, err = config.LoadConfig()
 	if err != nil {
 		t.Fatalf("error loading config file: %v", err)
 	}
@@ -81,28 +60,20 @@ func TestCreateCommand_With_Options(t *testing.T) {
 		t.Fatalf("error executing root command: %v", err)
 	}
 
-	licenseProps := setupFile(t, constants.LicenseProperties, tmp)
-	quickstartJar := setupFile(t, "cq-quickstart.jar", tmp)
-	defer licenseProps.file.Close()
-	defer quickstartJar.file.Close()
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer licenseProps.File.Close()
+	defer quickstartJar.File.Close()
 
 	name := "test"
-	pathFlag := "cloud-service"
+	pathFlag := filepath.Join(tmp, "cloud-service")
 	authorPort := "8080"
 	publishPort := "8081"
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		t.Fatalf("error loading config file: %v", err)
-	}
-
-	if err := os.Mkdir(filepath.Join(cfg.EnvsPath, pathFlag), 0o755); err != nil {
-		t.Fatalf("error creating folder: %v", err)
-	}
 
 	createCmd := cmd.NewCreateCommand()
 	createCmd.SetArgs([]string{
-		licenseProps.path,
-		quickstartJar.path,
+		licenseProps.Path,
+		quickstartJar.Path,
 		"-p",
 		pathFlag,
 		"-n",
@@ -117,10 +88,10 @@ func TestCreateCommand_With_Options(t *testing.T) {
 		t.Fatalf("error executing command: %v", err)
 	}
 
-	envPath := filepath.Join(cfg.EnvsPath, pathFlag, name)
+	envPath := pathFlag
 	authorAndPublishExist(t, envPath)
 
-	cfg, err = config.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		t.Fatalf("error loading config file: %v", err)
 	}
@@ -162,13 +133,13 @@ func TestCreateCommand_LicenseProps_Doesnt_Exist(t *testing.T) {
 		t.Fatalf("error executing root command: %v", err)
 	}
 
-	quickstartJar := setupFile(t, "cq-quickstart.jar", tmp)
-	defer quickstartJar.file.Close()
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer quickstartJar.File.Close()
 
 	createCmd := cmd.NewCreateCommand()
 	createCmd.SetArgs([]string{
 		filepath.Join(tmp, constants.LicenseProperties),
-		quickstartJar.path,
+		quickstartJar.Path,
 	})
 	err := createCmd.Execute()
 	if err == nil {
@@ -186,12 +157,12 @@ func TestCreateCommand_Quickstart_JAR_Doesnt_Exist(t *testing.T) {
 		t.Fatalf("error executing root command: %v", err)
 	}
 
-	licenseProps := setupFile(t, constants.LicenseProperties, tmp)
-	defer licenseProps.file.Close()
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	defer licenseProps.File.Close()
 
 	createCmd := cmd.NewCreateCommand()
 	createCmd.SetArgs([]string{
-		licenseProps.path,
+		licenseProps.Path,
 		filepath.Join(tmp, "cq-quickstart.jar"),
 	})
 
@@ -205,21 +176,63 @@ func TestCreateCommand_Quickstart_JAR_Doesnt_Exist(t *testing.T) {
 	}
 }
 
+
+func TestCreateCommand_Existing_Destination(t *testing.T) {
+	rootCmd, tmp := helpers.SetupForSubcommands(t)
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("error executing root command: %v", err)
+	}
+
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer licenseProps.File.Close()
+	defer quickstartJar.File.Close()
+
+	envDir := filepath.Join(tmp, "existing-env")
+	if err := os.Mkdir(envDir, 0o755); err != nil {
+		t.Fatalf("failed to pre-create destination: %v", err)
+	}
+
+	createCmd := cmd.NewCreateCommand()
+	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", envDir})
+	if err := createCmd.Execute(); err != nil {
+		t.Fatalf("error executing command: %v", err)
+	}
+
+	authorAndPublishExist(t, envDir)
+
+	tempPath, err := config.GetTempFolderPath()
+	if err != nil {
+		t.Fatalf("error getting temp folder path: %v", err)
+	}
+	if utils.PathExists(filepath.Join(tempPath, "aem")) {
+		t.Error("FAILED: expected temp directory to be cleaned up after copy")
+	}
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		t.Fatalf("error loading config file: %v", err)
+	}
+	if len(cfg.Environments) == 0 {
+		t.Error("FAILED: expected new environment to have been added to config.json")
+	}
+}
+
 func TestCreateCommand_Invalid_Port_Flag_Value(t *testing.T) {
 	rootCmd, tmp := helpers.SetupForSubcommands(t)
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("error executing root command: %v", err)
 	}
 
-	licenseProps := setupFile(t, constants.LicenseProperties, tmp)
-	quickstartJar := setupFile(t, "cq-quickstart.jar", tmp)
-	defer licenseProps.file.Close()
-	defer quickstartJar.file.Close()
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer licenseProps.File.Close()
+	defer quickstartJar.File.Close()
 
 	createCmd := cmd.NewCreateCommand()
 	createCmd.SetArgs([]string{
-		licenseProps.path,
-		quickstartJar.path,
+		licenseProps.Path,
+		quickstartJar.Path,
 		"-n",
 		"test",
 		"--author-port",

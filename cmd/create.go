@@ -28,11 +28,9 @@ func NewCreateCommand() *cobra.Command {
 command assumes and requires that you have a valid license.properties and AEM Quickstart
 JAR files.
 
-By default, environments are stored under the 'envsPath' value set in .aemlocal/config.json.
+By default, the environment is created in the current working directory.
 
-Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.jar -p cloud-service
-
-The new environment will be stored in /{envsPath}/aem/cloud-service.`,
+Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.jar -n cloud-service`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tempFolderPath, err := config.GetTempFolderPath()
 			if err != nil {
@@ -52,13 +50,13 @@ The new environment will be stored in /{envsPath}/aem/cloud-service.`,
 			}
 
 			// Temp location is deleted in-case something goes wrong
-			src := filepath.Join(tempFolderPath, name)
-			if err := os.Mkdir(src, 0o755); err != nil {
+			srcPath := filepath.Join(tempFolderPath, name)
+			if err := os.Mkdir(srcPath, 0o755); err != nil {
 				return err
 			}
 
 			paths := &paths.Paths{
-				Name:              src,
+				Name:              srcPath,
 				LicenseProperties: licensePropertiesPath,
 				QuickstartJAR:     quickstartJarPath,
 			}
@@ -73,23 +71,36 @@ The new environment will be stored in /{envsPath}/aem/cloud-service.`,
 
 			// Create author and publish instance folders
 			if err := authorInstance.Create(paths); err != nil {
-				return utils.ErrorAndCleanup(src, err)
+				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
 			if err := publishInstance.Create(paths); err != nil {
-				return utils.ErrorAndCleanup(src, err)
+				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
 			// Move environment from temp folder to final destination
-			dest := cfg.EnvsPath
-			if path != "" && utils.PathExists(filepath.Join(dest, path)) {
-				dest = filepath.Join(dest, path, name)
+			var dest string
+			if path != "" {
+				dest = path
 			} else {
-				dest = filepath.Join(dest, name)
+				dest, err = os.Getwd()
+				if err != nil {
+					return utils.ErrorAndCleanup(srcPath, err)
+				}
 			}
 
-			if err := os.Rename(src, dest); err != nil {
-				return utils.ErrorAndCleanup(dest, err)
+			// Copy contents of temp file to existing directory if it exists
+			// Else, move environment to the destination
+			if utils.PathExists(dest) {
+				src := os.DirFS(srcPath)
+				if err := os.CopyFS(dest, src); err != nil {
+					return utils.ErrorAndCleanup(srcPath, err)
+				}
+				os.RemoveAll(srcPath) // Remove temppath
+			} else {
+				if err := os.Rename(srcPath, dest); err != nil {
+					return utils.ErrorAndCleanup(srcPath, err)
+				}
 			}
 
 			environment := environment.Environment{
@@ -112,7 +123,7 @@ The new environment will be stored in /{envsPath}/aem/cloud-service.`,
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "aem", "Name of the local AEM environment.")
-	cmd.Flags().StringVarP(&path, "path", "p", "", "Where the environment should be stored. This should be a relative path inside envsPath.")
+	cmd.Flags().StringVarP(&path, "path", "p", "", "Path where environment should be created.")
 	cmd.Flags().IntVar(&authorPort, "author-port", constants.DefaultAuthorPort, "Author port.")
 	cmd.Flags().IntVar(&publishPort, "publish-port", constants.DefaultPublishPort, "Publish port.")
 

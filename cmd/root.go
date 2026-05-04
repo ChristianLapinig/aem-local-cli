@@ -8,7 +8,7 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "aem-local-cli",
+		Use:   "aemlocal",
 		Short: "A CLI that helps manage local AEM environments and SDKs.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("aemlocal")

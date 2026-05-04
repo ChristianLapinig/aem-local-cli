@@ -9,6 +9,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type data struct {
+	Path string
+	File *os.File
+}
+
+// Setup test files
+func SetupFile(t testing.TB, name, path string) *data {
+	dest := filepath.Join(path, name)
+	f, err := os.Create(dest)
+	if err != nil {
+		t.Fatalf("error creating file %s", dest)
+	}
+	return &data{
+		Path: dest,
+		File: f,
+	}
+}
+
 func SetupTempDir(t testing.TB) string {
 	tmp := t.TempDir()
 	t.Setenv("AEMLOCAL_TEST_HOME", tmp)
@@ -28,11 +46,8 @@ func SetupWithInitCmd(t testing.TB) (*cobra.Command, string) {
 }
 
 func SetupForSubcommands(t testing.TB) (*cobra.Command, string) {
-	rootCmd, tmp := SetupWithInitCmd(t)
-	envsPath := filepath.Join(tmp, "envs")
-	if err := os.Mkdir(envsPath, 0o755); err != nil {
-		t.Fatalf("Error creating folder %s: %v", envsPath, err)
-	}
-	rootCmd.SetArgs([]string{"init", "-p", tmp, "-e", envsPath})
+	rootCmd, tmp := SetupWithRootCmd(t)
+	rootCmd.AddCommand(cmd.NewInitCmd())
+	rootCmd.SetArgs([]string{"init", "-p", tmp})
 	return rootCmd, tmp
 }
