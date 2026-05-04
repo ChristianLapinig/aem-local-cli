@@ -58,9 +58,19 @@ $ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar
 # In this example, if .aemlocal/config.json/envsPath is /Users/me/envs, the
 # generated environment will be at /Users/me/envs/cloud-service/test.
 $ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar -n test -p cloud-service --author-port 8080 --publish-port 8081 
+
 ```
 
-### `delete`
+### `add`
+
+The `add` command allows you to add an existing environment.
+
+```bash
+aemlocal /path/to/existing/environment
+
+```
+
+### `delete` - COMING SOON
 
 The delete command allows you to delete a local AEM environment.
 
@@ -128,4 +138,3 @@ If you want to contribute code, we recommend checking the “Issues” tab first
     1. If you are working on an issue, we recommend using the issue number as your branch name. For example, `issue-2`.
 3. Commit and push changes to your fork and the current branch you are working on.
 4. Submit a pull request.
-
