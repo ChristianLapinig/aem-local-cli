@@ -6,8 +6,14 @@ import (
 	"github.com/ChristianLapinig/aem-local-cli/cmd"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
-	rootCmd := cmd.NewRootCmd()
+	rootCmd := cmd.NewRootCmd(version)
 	rootCmd.AddCommand(cmd.NewInitCmd())
 	rootCmd.AddCommand(cmd.NewCreateCommand())
 	rootCmd.AddCommand(cmd.NewListCommand())
