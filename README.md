@@ -26,7 +26,6 @@ The `init` command generates a configuration directory `.aemlocal` with the foll
 
 **Options**
 
-- `-e, --envsPath` - Path where local AEM environments are stored.
 - `-p, --path` - Path where to create the configuration directory.
 
 **Usage**
@@ -35,7 +34,7 @@ The `init` command generates a configuration directory `.aemlocal` with the foll
 $ aemlocal init
 
 # With options
-$ aemlocal init -e /Users/me/aem -p /Users/me/Documents
+$ aemlocal init -p /Users/me/Documents
 ```
 
 ### `create`
@@ -45,7 +44,7 @@ The `create` command allows you to generate a local AEM environment with the nec
 **Options**
 
 - `-n/--name` - Name of the environment (default = `aem`)
-- `-p/--path` - Relative path under `envsPath` property in `.aemlocal/config.json` where the environment should be created.
+- `-p/--path` - Path where the environment should be created. Defaults to the current working directory.
 - `--author-port` - Specifies the port the author instance should run on (default = 4502).
 - `--publish-port` - Specifies the port the publish instance should run on. (default = 4503).
 
@@ -55,19 +54,22 @@ The `create` command allows you to generate a local AEM environment with the nec
 $ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar
 
 # With options
-# In this example, if .aemlocal/config.json/envsPath is /Users/me/envs, the
-# generated environment will be at /Users/me/envs/cloud-service/test.
-$ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar -n test -p cloud-service --author-port 8080 --publish-port 8081 
-
+$ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar -n test -p /Users/me/envs/cloud-service --author-port 8080 --publish-port 8081
 ```
 
 ### `add`
 
 The `add` command allows you to add an existing environment.
 
-```bash
-aemlocal /path/to/existing/environment
+**Arguments**
 
+- `<name>` - Name to assign to the environment.
+- `<path-to-environment>` - Path to the existing environment directory.
+
+**Usage**
+
+```bash
+$ aemlocal add my-env /path/to/existing/environment
 ```
 
 ### `delete` - COMING SOON
