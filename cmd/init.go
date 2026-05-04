@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ChristianLapinig/aem-local-cli/constants"
 	"github.com/ChristianLapinig/aem-local-cli/internal/utils"
@@ -33,6 +35,20 @@ stored and are deleted if something fails.
 			}
 
 			configPath := filepath.Join(path, constants.AemLocalFolder)
+			if utils.PathExists(configPath) {
+				fmt.Printf(".aemlocal already exists at %s. Overwrite? [y/N]: ", configPath)
+				reader := bufio.NewReader(cmd.InOrStdin())
+				answer, _ := reader.ReadString('\n')
+				if strings.ToLower(strings.TrimSpace(answer)) != "y" {
+					fmt.Println("Aborted.")
+					return nil
+				}
+
+				if err := os.RemoveAll(configPath); err != nil {
+					return err
+				}
+			}
+
 			if err := os.Mkdir(configPath, 0o755); err != nil {
 				return utils.ErrorAndCleanup(configPath, err)
 			}
