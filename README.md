@@ -39,22 +39,25 @@ $ aemlocal init -p /Users/me/Documents
 
 ### `create`
 
-The `create` command allows you to generate a local AEM environment with the necessary JARs, and [`license.properties`](http://license.properties) files in the respective author and publish folders.This command assumes that you have a valid AEM Quickstart JAR, and [`license.properties`](http://license.properties) file required to run AEM locally.
+The `create` command allows you to generate a local AEM environment with the necessary JARs, and [`license.properties`](http://license.properties) files in the respective author and publish folders. This command assumes that you have a valid AEM Quickstart JAR, and [`license.properties`](http://license.properties) file required to run AEM locally.
+
+The environment is created as a named subdirectory within the base path (e.g. `-p /Users/me/envs -n cloud-service` creates the environment at `/Users/me/envs/cloud-service`). If `-n` is not provided, you will be prompted to enter a name. The command will error if an environment with the same name already exists in the config, or if the destination directory already exists on disk.
 
 **Options**
 
-- `-n/--name` - Name of the environment (default = `aem`)
-- `-p/--path` - Path where the environment should be created. Defaults to the current working directory.
+- `-n/--name` - Name of the environment. If omitted, you will be prompted to enter one.
+- `-p/--path` - Base directory where the environment subdirectory should be created. Must already exist. Defaults to the current working directory.
 - `--author-port` - Specifies the port the author instance should run on (default = 4502).
-- `--publish-port` - Specifies the port the publish instance should run on. (default = 4503).
+- `--publish-port` - Specifies the port the publish instance should run on (default = 4503).
 
 **Usage**
 
 ```bash
+# Prompts for environment name, creates within the current working directory
 $ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar
 
-# With options
-$ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar -n test -p /Users/me/envs/cloud-service --author-port 8080 --publish-port 8081
+# With options — creates environment at /Users/me/envs/cloud-service
+$ aemlocal create /path/to/license.properties /path/to/aem-quickstart.jar -n cloud-service -p /Users/me/envs --author-port 8080 --publish-port 8081
 ```
 
 ### `add`
@@ -72,21 +75,27 @@ The `add` command allows you to add an existing environment.
 $ aemlocal add my-env /path/to/existing/environment
 ```
 
-### `delete` - COMING SOON
+### `delete`
 
-The delete command allows you to delete a local AEM environment.
-
-```bash
-# Default command will list environments where you can select which environment to delete
-$ aemlocal delete
-
-# With options
-$ aemlocal delete -n name-of-env
-```
+The `delete` command removes a local AEM environment from the config. If `-n` is not provided, you will be prompted to select an environment from a list. You will always be asked to confirm before deletion proceeds.
 
 **Options**
 
-- `-n, --name` - Name of the environment to delete
+- `-n, --name` - Name of the environment to delete.
+- `--purge` - Also deletes the environment directory from the filesystem. If omitted, you will be prompted after confirming deletion.
+
+**Usage**
+
+```bash
+# Prompts to select an environment, then confirms before deleting
+$ aemlocal delete
+
+# With options
+$ aemlocal delete -n my-env
+
+# Also remove the environment folder from disk
+$ aemlocal delete -n my-env --purge
+```
 
 ### `list`
 

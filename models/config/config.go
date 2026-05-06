@@ -37,20 +37,20 @@ func CreateConfigFile(path string) error {
 
 func GetTempFolderPath() (string, error) {
 	data, err := utils.LoadMarkerFile()
-	path := filepath.Join(strings.TrimSpace(string(data)), "temp")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(path)), nil
+	path := filepath.Join(strings.TrimSpace(string(data)), "temp")
+	return strings.TrimSpace(path), nil
 }
 
 func GetConfigPath() (string, error) {
 	data, err := utils.LoadMarkerFile()
-	path := filepath.Join(strings.TrimSpace(string(data)), "config.json")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(path)), nil
+	path := filepath.Join(strings.TrimSpace(string(data)), "config.json")
+	return strings.TrimSpace(path), nil
 }
 
 func LoadConfig() (*Config, error) {

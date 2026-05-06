@@ -35,14 +35,13 @@ func TestCreateCommand_Default_Options(t *testing.T) {
 	defer licenseProps.File.Close()
 	defer quickstartJar.File.Close()
 
-	envDir := filepath.Join(tmp, "my-env")
-
 	createCmd := cmd.NewCreateCommand()
-	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", envDir})
+	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", tmp, "-n", "my-env"})
 	if err := createCmd.Execute(); err != nil {
 		t.Fatalf("error executing command: %v", err)
 	}
 
+	envDir := filepath.Join(tmp, "my-env")
 	authorAndPublishExist(t, envDir)
 
 	cfg, err := config.LoadConfig()
@@ -51,6 +50,9 @@ func TestCreateCommand_Default_Options(t *testing.T) {
 	}
 	if len(cfg.Environments) == 0 {
 		t.Error("FAILED: expected new environment to have been added to config.json")
+	}
+	if cfg.Environments[0].Path != envDir {
+		t.Errorf("FAILED: expected environment path to be %s, got %s", envDir, cfg.Environments[0].Path)
 	}
 }
 
@@ -66,7 +68,10 @@ func TestCreateCommand_With_Options(t *testing.T) {
 	defer quickstartJar.File.Close()
 
 	name := "test"
-	pathFlag := filepath.Join(tmp, "cloud-service")
+	baseDir := filepath.Join(tmp, "cloud-service")
+	if err := os.Mkdir(baseDir, 0o755); err != nil {
+		t.Fatalf("error creating base directory: %v", err)
+	}
 	authorPort := "8080"
 	publishPort := "8081"
 
@@ -74,21 +79,17 @@ func TestCreateCommand_With_Options(t *testing.T) {
 	createCmd.SetArgs([]string{
 		licenseProps.Path,
 		quickstartJar.Path,
-		"-p",
-		pathFlag,
-		"-n",
-		name,
-		"--author-port",
-		authorPort,
-		"--publish-port",
-		publishPort,
+		"-p", baseDir,
+		"-n", name,
+		"--author-port", authorPort,
+		"--publish-port", publishPort,
 	})
 
 	if err := createCmd.Execute(); err != nil {
 		t.Fatalf("error executing command: %v", err)
 	}
 
-	envPath := pathFlag
+	envPath := filepath.Join(baseDir, name)
 	authorAndPublishExist(t, envPath)
 
 	cfg, err := config.LoadConfig()
@@ -101,11 +102,10 @@ func TestCreateCommand_With_Options(t *testing.T) {
 
 	environment := cfg.Environments[0]
 	if environment.Name != name {
-		t.Errorf("FAILED: expected environment name to be %s, got %s", environment.Name, name)
+		t.Errorf("FAILED: expected environment name to be %s, got %s", name, environment.Name)
 	}
-
 	if environment.Path != envPath {
-		t.Errorf("FAILED: expected environment path to be %s, got %s", environment.Path, envPath)
+		t.Errorf("FAILED: expected environment path to be %s, got %s", envPath, environment.Path)
 	}
 }
 
@@ -176,8 +176,7 @@ func TestCreateCommand_Quickstart_JAR_Doesnt_Exist(t *testing.T) {
 	}
 }
 
-
-func TestCreateCommand_Existing_Destination(t *testing.T) {
+func TestCreateCommand_NamedDest_AlreadyExists(t *testing.T) {
 	rootCmd, tmp := helpers.SetupForSubcommands(t)
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("error executing root command: %v", err)
@@ -188,33 +187,42 @@ func TestCreateCommand_Existing_Destination(t *testing.T) {
 	defer licenseProps.File.Close()
 	defer quickstartJar.File.Close()
 
-	envDir := filepath.Join(tmp, "existing-env")
-	if err := os.Mkdir(envDir, 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(tmp, "existing-env"), 0o755); err != nil {
 		t.Fatalf("failed to pre-create destination: %v", err)
 	}
 
 	createCmd := cmd.NewCreateCommand()
-	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", envDir})
-	if err := createCmd.Execute(); err != nil {
-		t.Fatalf("error executing command: %v", err)
+	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", tmp, "-n", "existing-env"})
+	err := createCmd.Execute()
+	if err == nil {
+		t.Fatal("FAILED: expected error when named destination already exists")
+	}
+	if !strings.Contains(err.Error(), "already exists") {
+		t.Errorf("FAILED: expected 'already exists' error, got: %v", err)
+	}
+}
+
+func TestCreateCommand_DuplicateName(t *testing.T) {
+	rootCmd, tmp := helpers.SetupForSubcommands(t)
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("error executing root command: %v", err)
 	}
 
-	authorAndPublishExist(t, envDir)
+	addEnvToConfig(t, "my-env", filepath.Join(tmp, "my-env"))
 
-	tempPath, err := config.GetTempFolderPath()
-	if err != nil {
-		t.Fatalf("error getting temp folder path: %v", err)
-	}
-	if utils.PathExists(filepath.Join(tempPath, "aem")) {
-		t.Error("FAILED: expected temp directory to be cleaned up after copy")
-	}
+	licenseProps := helpers.SetupFile(t, constants.LicenseProperties, tmp)
+	quickstartJar := helpers.SetupFile(t, "cq-quickstart.jar", tmp)
+	defer licenseProps.File.Close()
+	defer quickstartJar.File.Close()
 
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		t.Fatalf("error loading config file: %v", err)
+	createCmd := cmd.NewCreateCommand()
+	createCmd.SetArgs([]string{licenseProps.Path, quickstartJar.Path, "-p", tmp, "-n", "my-env"})
+	err := createCmd.Execute()
+	if err == nil {
+		t.Fatal("FAILED: expected error when environment name already exists in config")
 	}
-	if len(cfg.Environments) == 0 {
-		t.Error("FAILED: expected new environment to have been added to config.json")
+	if !strings.Contains(err.Error(), "my-env") {
+		t.Errorf("FAILED: expected error to mention environment name, got: %v", err)
 	}
 }
 
