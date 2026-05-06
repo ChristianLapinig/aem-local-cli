@@ -26,6 +26,12 @@ func NewAddCommand() *cobra.Command {
 				return err
 			}
 
+			for _, e := range cfg.Environments {
+				if e.Name == name {
+					return fmt.Errorf("Environment %s already exists.", name)
+				}
+			}
+
 			env := environment.Environment{
 				Name: name,
 				Path: path,

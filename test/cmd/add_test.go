@@ -81,3 +81,26 @@ func TestAddCommand_Not_Enough_Args(t *testing.T) {
 		t.Errorf("FAILED: expected not enough args error, got: %v", err)
 	}
 }
+
+func TestAddCommand_DuplicateName(t *testing.T) {
+	rootCmd, tmp := helpers.SetupForSubcommands(t)
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("error executing root command: %v", err)
+	}
+
+	envPath := filepath.Join(tmp, "my-env")
+	if err := os.Mkdir(envPath, 0o755); err != nil {
+		t.Fatalf("error creating environment directory: %v", err)
+	}
+	addEnvToConfig(t, "my-env", envPath)
+
+	addCmd := cmd.NewAddCommand()
+	addCmd.SetArgs([]string{"my-env", envPath})
+	err := addCmd.Execute()
+	if err == nil {
+		t.Fatal("FAILED: expected error when environment name already exists")
+	}
+	if !strings.Contains(err.Error(), "my-env") {
+		t.Errorf("FAILED: expected error to mention environment name, got: %v", err)
+	}
+}

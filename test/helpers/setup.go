@@ -35,7 +35,7 @@ func SetupTempDir(t testing.TB) string {
 
 func SetupWithRootCmd(t testing.TB) (*cobra.Command, string) {
 	tmp := SetupTempDir(t)
-	rootCmd := cmd.NewRootCmd()
+	rootCmd := cmd.NewRootCmd("dev")
 	return rootCmd, tmp
 }
 

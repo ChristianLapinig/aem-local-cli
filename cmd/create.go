@@ -11,6 +11,7 @@ import (
 	"github.com/ChristianLapinig/aem-local-cli/models/environment"
 	"github.com/ChristianLapinig/aem-local-cli/models/instance"
 	"github.com/ChristianLapinig/aem-local-cli/models/paths"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
@@ -49,6 +50,42 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 				return err
 			}
 
+			// Resolve base directory
+			var base string
+			if path != "" {
+				base = path
+			} else {
+				base, err = os.Getwd()
+				if err != nil {
+					return err
+				}
+			}
+			if err := utils.PathExistsWithError(base); err != nil {
+				return err
+			}
+
+			// Prompt for name if not provided
+			if name == "" {
+				prompt := promptui.Prompt{Label: "Environment name"}
+				name, err = prompt.Run()
+				if err != nil {
+					return err
+				}
+			}
+
+			// Check for duplicate name in config
+			for _, e := range cfg.Environments {
+				if e.Name == name {
+					return fmt.Errorf("environment %q already exists", name)
+				}
+			}
+
+			// Destination is always a named subdirectory of base
+			dest := filepath.Join(base, name)
+			if utils.PathExists(dest) {
+				return fmt.Errorf("directory %s already exists", dest)
+			}
+
 			// Temp location is deleted in-case something goes wrong
 			srcPath := filepath.Join(tempFolderPath, name)
 			if err := os.Mkdir(srcPath, 0o755); err != nil {
@@ -78,29 +115,9 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
-			// Move environment from temp folder to final destination
-			var dest string
-			if path != "" {
-				dest = path
-			} else {
-				dest, err = os.Getwd()
-				if err != nil {
-					return utils.ErrorAndCleanup(srcPath, err)
-				}
-			}
-
-			// Copy contents of temp file to existing directory if it exists
-			// Else, move environment to the destination
-			if utils.PathExists(dest) {
-				src := os.DirFS(srcPath)
-				if err := os.CopyFS(dest, src); err != nil {
-					return utils.ErrorAndCleanup(srcPath, err)
-				}
-				os.RemoveAll(srcPath) // Remove temppath
-			} else {
-				if err := os.Rename(srcPath, dest); err != nil {
-					return utils.ErrorAndCleanup(srcPath, err)
-				}
+			// dest is guaranteed not to exist; move temp folder into place
+			if err := os.Rename(srcPath, dest); err != nil {
+				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
 			environment := environment.Environment{
@@ -122,7 +139,7 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 		},
 	}
 
-	cmd.Flags().StringVarP(&name, "name", "n", "aem", "Name of the local AEM environment.")
+	cmd.Flags().StringVarP(&name, "name", "n", "", "Name of the local AEM environment.")
 	cmd.Flags().StringVarP(&path, "path", "p", "", "Path where environment should be created.")
 	cmd.Flags().IntVar(&authorPort, "author-port", constants.DefaultAuthorPort, "Author port.")
 	cmd.Flags().IntVar(&publishPort, "publish-port", constants.DefaultPublishPort, "Publish port.")
