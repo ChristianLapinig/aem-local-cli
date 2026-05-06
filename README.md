@@ -12,6 +12,18 @@ AEM Local CLI is a cli that helps manage local AEM environments.
 
 - [Cobra](https://cobra.dev/)
 
+## Installation
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh
+```
+
+This installs the `aemlocal` binary to `/usr/local/bin`. A specific version can be installed by passing it as an argument:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh -s v0.1.0
+```
+
 ## Commands/Usage
 
 ### `init`
