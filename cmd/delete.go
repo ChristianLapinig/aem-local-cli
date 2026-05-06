@@ -19,7 +19,14 @@ func NewDeleteCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Remove an environment.",
+		Short: "Remove a configured AEM environment",
+		Long: `Remove a configured AEM environment from the local CLI.
+
+Removes the environment entry from the config file. Optionally deletes the
+environment directory from the filesystem using the --purge flag.
+
+If --name is not provided, an interactive prompt lets you select the environment
+to delete. You will always be asked to confirm before any changes are made.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
