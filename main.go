@@ -19,6 +19,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewListCommand())
 	rootCmd.AddCommand(cmd.NewAddCommand())
 	rootCmd.AddCommand(cmd.NewDeleteCmd())
+	rootCmd.AddCommand(cmd.NewUpdateCmd(version))
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
