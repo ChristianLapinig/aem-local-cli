@@ -24,6 +24,20 @@ This installs the `aemlocal` binary to `/usr/local/bin`. A specific version can 
 curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh -s v0.1.0
 ```
 
+## Updating
+
+Re-run the install script to update to the latest version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh
+```
+
+To update to a specific version, pass the version as an argument:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh -s v0.2.0
+```
+
 ## Commands/Usage
 
 ### `init`

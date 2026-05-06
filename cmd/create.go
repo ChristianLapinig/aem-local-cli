@@ -88,6 +88,7 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 
 			// Temp location is deleted in-case something goes wrong
 			srcPath := filepath.Join(tempFolderPath, name)
+			logf("creating temp directory at %s", srcPath)
 			if err := os.Mkdir(srcPath, 0o755); err != nil {
 				return err
 			}
@@ -107,15 +108,18 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 			}
 
 			// Create author and publish instance folders
+			logf("creating author instance (port %d)", authorPort)
 			if err := authorInstance.Create(paths); err != nil {
 				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
+			logf("creating publish instance (port %d)", publishPort)
 			if err := publishInstance.Create(paths); err != nil {
 				return utils.ErrorAndCleanup(srcPath, err)
 			}
 
 			// dest is guaranteed not to exist; move temp folder into place
+			logf("moving environment to %s", dest)
 			if err := os.Rename(srcPath, dest); err != nil {
 				return utils.ErrorAndCleanup(srcPath, err)
 			}
@@ -129,6 +133,7 @@ Example: $ aemlocal create /path/to/license.properties /path/to/cq-quickstart.ja
 			if err != nil {
 				return err
 			}
+			logf("updating config at %s", configPath)
 			if err := config.UpdateConfig(configPath, cfg); err != nil {
 				return err
 			}
