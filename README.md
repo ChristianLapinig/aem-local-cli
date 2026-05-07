@@ -26,16 +26,37 @@ curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main
 
 ## Updating
 
-Re-run the install script to update to the latest version:
+Run the built-in update command to upgrade to the latest version:
+
+```sh
+aemlocal update
+```
+
+If the binary is installed in a system directory (e.g. `/usr/local/bin`), you may need to run it with `sudo`:
+
+```sh
+sudo aemlocal update
+```
+
+Alternatively, re-run the install script directly:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh
 ```
 
-To update to a specific version, pass the version as an argument:
+To install a specific version, pass the version as an argument:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ChristianLapinig/aem-local-cli/main/install.sh | sh -s v0.2.0
+```
+
+### Update notifications
+
+Once per day, `aemlocal` checks for a new release in the background. If a newer version is available, a notice is printed after any command:
+
+```
+A new version of aemlocal is available: v0.3.0 (you have v0.2.0)
+Run 'aemlocal update' to upgrade.
 ```
 
 ## Commands/Usage
@@ -121,6 +142,23 @@ $ aemlocal delete -n my-env
 
 # Also remove the environment folder from disk
 $ aemlocal delete -n my-env --purge
+```
+
+### `update`
+
+The `update` command checks for a newer version of `aemlocal` and, if one is available, downloads it and replaces the running binary in place.
+
+```bash
+$ aemlocal update
+Checking for updates...
+Updating v0.2.0 → v0.3.0
+Downloading... done
+Successfully updated to v0.3.0
+
+# Already on the latest version
+$ aemlocal update
+Checking for updates...
+Already on the latest version (v0.3.0)
 ```
 
 ### `list`
